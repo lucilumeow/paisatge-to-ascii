@@ -379,7 +379,7 @@ function setMode(m) {
   } else {
     video.pause();
     cancelAnimationFrame(rafId);
-    if (imageResults.length === 0) fetchImages();
+    if (imageResults.length === 0) fetchImages(document.getElementById('search-input').value.trim());
     else renderImageNow();
   }
 }
