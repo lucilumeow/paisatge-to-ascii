@@ -301,7 +301,10 @@ function hsvToRgb(h,s,v) {
 }
 function applyBrightSat(r,g,b) {
   r=Math.min(255,r*params.brightness); g=Math.min(255,g*params.brightness); b=Math.min(255,b*params.brightness);
-  let [h,s,v]=rgbToHsv(r,g,b); s=Math.min(s+params.satBoost,1.0);
+  let [h,s,v]=rgbToHsv(r,g,b);
+  // Només augmentar saturació si el píxel ja té color propi.
+  // Si s≈0 (gris/blanc/negre), no toquem h ni s per evitar que h=0 (vermell) contamini.
+  if (s > 0.05) s = Math.min(s + params.satBoost, 1.0);
   return hsvToRgb(h,s,v);
 }
 function rgbToBright(r,g,b) { return 0.267*r + 0.642*g + 0.091*b; }
