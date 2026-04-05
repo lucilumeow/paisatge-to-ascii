@@ -185,7 +185,7 @@
 
   <div class="ctrl">
     <label>suavitat</label>
-    <input type="range" id="sl-feather" min="1" max="5" value="2.5" step="0.1">
+    <input type="range" id="sl-feather" min="0" max="5" value="2.5" step="0.1">
     <span id="v-feather">2.5</span>
   </div>
 
@@ -317,6 +317,8 @@ function brightToChar(bright) {
 // ═══════════════════════════════════════════
 function buildVignetteMask(w, h, exponent) {
   const mask = new Float32Array(w * h);
+  // exponent = 0 → sense vinyeta, tota la capa completament opaca
+  if (exponent === 0) { mask.fill(1.0); return mask; }
   // Inner zone radius: pixels within this fraction of the edge are fully opaque
   const innerR = 0.55; // 55% del radi = zona opaca plana
   for (let y = 0; y < h; y++) {
@@ -324,11 +326,10 @@ function buildVignetteMask(w, h, exponent) {
     for (let x = 0; x < w; x++) {
       const dx = (x - (w-1) * 0.5) / ((w-1) * 0.5);
       const d = Math.min(1.0, Math.sqrt(dx*dx + dy*dy));
-      // Remap: [0..innerR] → opac, [innerR..1] → fade
       if (d <= innerR) {
         mask[y * w + x] = 1.0;
       } else {
-        const t = (d - innerR) / (1.0 - innerR); // 0..1 a la zona de degradat
+        const t = (d - innerR) / (1.0 - innerR);
         const s = 1.0 - t;
         const smooth = s * s * (3 - 2*s);
         mask[y * w + x] = Math.pow(smooth, exponent);
@@ -336,6 +337,28 @@ function buildVignetteMask(w, h, exponent) {
     }
   }
   return mask;
+}
+
+// Analitza la lluminositat mitjana d'una capa un cop carregada.
+// Retorna 'multiply' si fons clar, 'screen' si fons fosc, 'normal' si mixt.
+function detectBlendMode(ctx, w, h) {
+  // Mostreig ràpid: 10×10 píxels uniformement distribuïts
+  const sampleStep = Math.max(1, Math.floor(Math.min(w, h) / 10));
+  let sumBright = 0, count = 0;
+  // Necessitem llegir píxels — la capa ja té el primer frame dibuixat
+  let data;
+  try { data = ctx.getImageData(0, 0, w, h).data; } catch(e) { return 'normal'; }
+  for (let y = 0; y < h; y += sampleStep) {
+    for (let x = 0; x < w; x += sampleStep) {
+      const i = (y * w + x) * 4;
+      sumBright += 0.267 * data[i] + 0.642 * data[i+1] + 0.091 * data[i+2];
+      count++;
+    }
+  }
+  const avg = count > 0 ? sumBright / count : 128;
+  if (avg > 180) return 'multiply';   // fons majoritàriament blanc
+  if (avg < 75)  return 'screen';     // fons majoritàriament negre
+  return 'normal';                    // mixt → vinyeta normal
 }
 
 // ═══════════════════════════════════════════
@@ -380,6 +403,7 @@ function makeLayer(asset) {
     x, y, lw, lh,
     canvas: cv, ctx: cx,
     vigMask,
+    blendMode: null,   // detectat al primer frame: 'multiply' | 'screen' | 'normal'
     startedAt: performance.now(),
     duration: rnd(5000, 20000),
   };
@@ -425,7 +449,12 @@ function buildComposite(ts) {
     if (!ready) continue;
 
     try { L.ctx.drawImage(m, 0, 0, L.lw, L.lh); } catch(e) { continue; }
+
+    // Detecció lazy del blend mode al primer frame disponible
+    if (L.blendMode === null) L.blendMode = detectBlendMode(L.ctx, L.lw, L.lh);
+
     const lpx = L.ctx.getImageData(0, 0, L.lw, L.lh).data;
+    const mode = L.blendMode;
 
     for (let ly = 0; ly < L.lh; ly++) {
       const gy = L.y + ly;
@@ -434,15 +463,41 @@ function buildComposite(ts) {
         const gx = L.x + lx;
         if (gx < 0 || gx >= cols) continue;
 
-        const a = L.alpha * L.vigMask[ly * L.lw + lx];
-        if (a < 0.003) continue;
-
         const gi = (gy * cols + gx) * 4;
         const li = (ly * L.lw + lx) * 4;
 
-        comp[gi]   = comp[gi]   * (1 - a) + lpx[li]   * a;
-        comp[gi+1] = comp[gi+1] * (1 - a) + lpx[li+1] * a;
-        comp[gi+2] = comp[gi+2] * (1 - a) + lpx[li+2] * a;
+        const sr = comp[gi], sg = comp[gi+1], sb = comp[gi+2]; // src (fons)
+        const lr = lpx[li],  lg = lpx[li+1],  lb = lpx[li+2];  // layer
+
+        if (mode === 'multiply') {
+          // Multiply: src * layer/255. La màscara de vinyeta controla el blend amb el fons
+          const vig = L.vigMask[ly * L.lw + lx];
+          const mr = (sr * lr / 255);
+          const mg = (sg * lg / 255);
+          const mb = (sb * lb / 255);
+          // Interpola entre fons original i resultat multiply segons vinyeta
+          comp[gi]   = sr * (1 - vig) + mr * vig;
+          comp[gi+1] = sg * (1 - vig) + mg * vig;
+          comp[gi+2] = sb * (1 - vig) + mb * vig;
+
+        } else if (mode === 'screen') {
+          // Screen: 255 - (255-src)*(255-layer)/255
+          const vig = L.vigMask[ly * L.lw + lx];
+          const mr = 255 - (255 - sr) * (255 - lr) / 255;
+          const mg = 255 - (255 - sg) * (255 - lg) / 255;
+          const mb = 255 - (255 - sb) * (255 - lb) / 255;
+          comp[gi]   = sr * (1 - vig) + mr * vig;
+          comp[gi+1] = sg * (1 - vig) + mg * vig;
+          comp[gi+2] = sb * (1 - vig) + mb * vig;
+
+        } else {
+          // Normal: alpha blend amb vinyeta
+          const a = L.alpha * L.vigMask[ly * L.lw + lx];
+          if (a < 0.003) continue;
+          comp[gi]   = sr * (1 - a) + lr * a;
+          comp[gi+1] = sg * (1 - a) + lg * a;
+          comp[gi+2] = sb * (1 - a) + lb * a;
+        }
       }
     }
   }
