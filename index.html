@@ -44,7 +44,6 @@
   #bar::-webkit-scrollbar { height: 3px; }
   #bar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
 
-  /* ── dark bar (default) ── */
   .ctrl {
     display: flex;
     align-items: center;
@@ -73,6 +72,21 @@
   }
   #search-input:focus { border-color: rgba(255,255,255,0.5); }
   #search-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  #video-search-wrap { display: flex; align-items: center; gap: 4px; }
+  #video-search-input {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    padding: 5px 8px;
+    border-radius: 2px;
+    width: 140px;
+    outline: none;
+    color: #fff;
+  }
+  #video-search-input:focus { border-color: rgba(255,255,255,0.5); }
+  #video-search-input::placeholder { color: rgba(255,255,255,0.25); }
 
   .sep { width: 1px; height: 24px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
 
@@ -124,43 +138,26 @@
     margin-left: auto; flex-shrink: 0;
   }
 
-  /* ── light bar (white bg) ── */
-  body.bg-white #bar {
-    background: rgba(255,255,255,0.9);
-    border-top: 1px solid #ddd;
-  }
+  /* light bar */
+  body.bg-white #bar { background: rgba(255,255,255,0.9); border-top: 1px solid #ddd; }
   body.bg-white #bar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
-
   body.bg-white .ctrl { color: rgba(0,0,0,0.6); }
   body.bg-white .ctrl label { color: rgba(0,0,0,0.4); }
   body.bg-white .ctrl span  { color: rgba(0,0,0,0.8); }
-
   body.bg-white input[type=range] { accent-color: rgba(0,0,0,0.6); }
-
-  body.bg-white #search-input {
-    border-color: rgba(0,0,0,0.2);
-    background: rgba(0,0,0,0.04);
-    color: #000;
+  body.bg-white #search-input, body.bg-white #video-search-input {
+    border-color: rgba(0,0,0,0.2); background: rgba(0,0,0,0.04); color: #000;
   }
-  body.bg-white #search-input:focus { border-color: rgba(0,0,0,0.5); }
-  body.bg-white #search-input::placeholder { color: rgba(0,0,0,0.25); }
-
+  body.bg-white #search-input:focus, body.bg-white #video-search-input:focus { border-color: rgba(0,0,0,0.5); }
+  body.bg-white #search-input::placeholder, body.bg-white #video-search-input::placeholder { color: rgba(0,0,0,0.25); }
   body.bg-white .sep { background: rgba(0,0,0,0.12); }
-
-  body.bg-white button {
-    background: rgba(0,0,0,0.07);
-    color: rgba(0,0,0,0.75);
-    border-color: rgba(0,0,0,0.12);
-  }
+  body.bg-white button { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.75); border-color: rgba(0,0,0,0.12); }
   body.bg-white button:hover  { background: rgba(0,0,0,0.13); border-color: rgba(0,0,0,0.22); }
   body.bg-white button:active { background: rgba(0,0,0,0.22); }
-
   body.bg-white .dbtn { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.4); border-color: rgba(0,0,0,0.1); }
   body.bg-white .dbtn.active { background: rgba(0,0,0,0.18); color: #000; border-color: rgba(0,0,0,0.25); }
-
   body.bg-white .mbtn { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.4); border-color: rgba(0,0,0,0.1); }
   body.bg-white .mbtn.active { background: rgba(0,0,0,0.18); color: #000; border-color: rgba(0,0,0,0.25); }
-
   body.bg-white #label-right { color: rgba(0,0,0,0.25); }
 
   #msg {
@@ -188,8 +185,12 @@
 
   <div class="sep"></div>
 
-  <div id="video-controls" style="display:none;align-items:center;gap:16px;">
-    <button id="btn-shuffle">⟳ shuffle</button>
+  <div id="video-controls" style="display:none;align-items:center;gap:8px;">
+    <div id="video-search-wrap">
+      <input id="video-search-input" type="text" placeholder="paraula clau..." value="nature landscape">
+      <button id="btn-video-search">buscar</button>
+    </div>
+    <button id="btn-shuffle">⟳ següent</button>
   </div>
 
   <div id="image-controls" style="display:flex;align-items:center;gap:8px;">
@@ -248,13 +249,13 @@
 <img id="img-src" style="display:none" crossorigin="anonymous">
 
 <script>
-const UNSPLASH_KEY     = 'yRPScUFRTKQQK6JEPfdqwQPlhq_UsliMq_irBvOvZn8';
-const LANDSCAPE_TAGS   = ['landscape','mountain','forest','city','urban','nature','architecture','street','ocean','desert','river','skyline'];
-const VIDEO_EXTENSIONS = ['mp4','webm','ogg','mov','mkv','avi'];
+const UNSPLASH_KEY = 'yRPScUFRTKQQK6JEPfdqwQPlhq_UsliMq_irBvOvZn8';
+const PEXELS_KEY   = 'pVWoWsM41HMTnR0mvV54bPwm7rxzgKVCNOBWYh5nikesx3gWHYjPb3vy';
+const LANDSCAPE_TAGS = ['landscape','mountain','forest','city','urban','nature','architecture','street','ocean','desert','river','skyline'];
 
-const CHARS_LIGHT  = [' ',' ','.', ':','!','+','*','e','$','@','8'];
-const CHARS_COLOR = [' ', '.', "'", '`', '^', '"', ',', ':', ';', 'I', 'l', '!', 'i', '>', '<', '~', '+', '_', '-', '?', ']', '[', '}', '{', '1', '|', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u', 'v', 'c', 'z', 'X', 'Y', 'U', 'J', 'C', 'L', 'Q', '0', 'O', 'Z', '#', 'M', 'W', '&', '8', '%', 'B', '@', '$'];
-const CHARS_FILLED = ['░','▒','▓','█'];
+const CHARS_LIGHT  = [' ', ' ', ' ', '.', '·', "'", ',', ':', ';', '!', 'i', 'l', '+', '*', 'e', '$', '@', '8', '#'];
+const CHARS_COLOR  = [' ', '.', "'", '`', '^', '"', ',', ':', ';', 'I', 'l', '!', 'i', '>', '<', '~', '+', '_', '-', '?', ']', '[', '}', '{', '1', '|', '/', 't', 'f', 'j', 'r', 'x', 'n', 'u', 'v', 'c', 'z', 'X', 'Y', 'U', 'J', 'C', 'L', 'Q', '0', 'O', 'Z', 'm', 'w', 'q', 'p', 'd', 'b', 'k', 'h', 'a', 'o', '*', '#', 'M', 'W', '&', '8', '%', 'B', '@', '$'];
+const CHARS_FILLED = ['░', '░', '▒', '▒', '▓', '▓', '█', '■', '◼', '▮', '▰'];
 const DENSITY_MAP  = [CHARS_LIGHT, CHARS_COLOR, CHARS_FILLED];
 
 let params = {
@@ -374,7 +375,8 @@ function setMode(m) {
   document.getElementById('fps-ctrl').style.display       = m === 'video' ? 'flex' : 'none';
 
   if (m === 'video') {
-    video.play().catch(()=>{});
+    if (videoList.length === 0) fetchVideos(document.getElementById('video-search-input').value.trim());
+    else shuffle();
     rafId = requestAnimationFrame(renderLoop);
   } else {
     video.pause();
@@ -384,6 +386,47 @@ function setMode(m) {
   }
 }
 
+// ── Pexels vídeos ─────────────────────────────────────────────────────────────
+async function fetchVideos(query) {
+  if (!query) query = LANDSCAPE_TAGS[Math.floor(Math.random() * LANDSCAPE_TAGS.length)];
+  showMsg('carregant vídeos...');
+  try {
+    const res = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=20&orientation=landscape`, {
+      headers: { Authorization: PEXELS_KEY }
+    });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    videoList = data.videos.map(v => {
+      const hd = v.video_files.find(f => f.quality === 'hd') || v.video_files[0];
+      return { url: hd.link, name: v.user.name };
+    });
+    showMsg('');
+    if (videoList.length > 0) shuffle();
+    else showMsg('// no hi ha vídeos');
+  } catch(e) {
+    showMsg('error Pexels: ' + e.message);
+  }
+}
+
+function loadVideo(item) {
+  video.src = item.url;
+  video.load();
+  label.textContent = item.name + ' · pexels';
+  video.play().catch(() => {});
+}
+
+function shuffle() {
+  if (videoList.length === 0) return;
+  loadVideo(videoList[Math.floor(Math.random() * videoList.length)]);
+}
+
+video.addEventListener('ended', shuffle);
+video.addEventListener('error', () => {
+  const codes = {1:'ABORTED',2:'NETWORK',3:'DECODE',4:'SRC_NOT_SUPPORTED'};
+  showMsg('ERROR vídeo: ' + (codes[video.error?.code]||'?'));
+});
+
+// ── Unsplash imatges ──────────────────────────────────────────────────────────
 async function fetchImages(query) {
   if (!query) query = LANDSCAPE_TAGS[Math.floor(Math.random() * LANDSCAPE_TAGS.length)];
   showMsg('carregant imatges...');
@@ -412,36 +455,9 @@ function nextImage() {
   showImage(imageResults[imageIdx]);
 }
 
-function loadVideo(name) {
-  video.src = 'videos/' + name;
-  video.load();
-  label.textContent = name;
-  video.play().catch(()=>{});
-}
-function shuffle() {
-  if (videoList.length === 0) return;
-  loadVideo(videoList[Math.floor(Math.random() * videoList.length)]);
-}
-video.addEventListener('ended', shuffle);
-video.addEventListener('error', () => {
-  const codes = {1:'ABORTED',2:'NETWORK',3:'DECODE',4:'SRC_NOT_SUPPORTED'};
-  showMsg('ERROR vídeo: ' + (codes[video.error?.code]||'?') + ' — converteix a .mp4');
-});
-
-async function discoverVideos() {
-  try {
-    const res  = await fetch('videos/');
-    const html = await res.text();
-    const doc  = new DOMParser().parseFromString(html, 'text/html');
-    videoList  = [...doc.querySelectorAll('a[href]')]
-      .map(a => a.getAttribute('href'))
-      .filter(h => VIDEO_EXTENSIONS.includes(h.split('.').pop().toLowerCase().split('?')[0]))
-      .map(h => h.replace(/^.*\//,''));
-  } catch(e) {}
-}
-
 function showMsg(t) { msg.textContent = t; }
 
+// ── Controls ──────────────────────────────────────────────────────────────────
 function bindSlider(id, valId, key, fmt, cb) {
   const el = document.getElementById(id), out = document.getElementById(valId);
   el.addEventListener('input', () => {
@@ -457,6 +473,7 @@ bindSlider('sl-cols',   'v-cols',   'colsOverride', v => +v===0?'auto':v, () => 
 
 document.getElementById('btn-shuffle').addEventListener('click', shuffle);
 document.getElementById('btn-next-img').addEventListener('click', nextImage);
+
 document.getElementById('btn-search').addEventListener('click', () => {
   const q = document.getElementById('search-input').value.trim();
   if (q) fetchImages(q);
@@ -464,11 +481,21 @@ document.getElementById('btn-search').addEventListener('click', () => {
 document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') { const q = e.target.value.trim(); if (q) fetchImages(q); }
 });
+
+document.getElementById('btn-video-search').addEventListener('click', () => {
+  const q = document.getElementById('video-search-input').value.trim();
+  if (q) fetchVideos(q);
+});
+document.getElementById('video-search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { const q = e.target.value.trim(); if (q) fetchVideos(q); }
+});
+
 document.getElementById('btn-bg').addEventListener('click', () => {
   params.whiteBg = !params.whiteBg;
   applyBg();
   if (params.mode === 'image') renderImageNow();
 });
+
 document.querySelectorAll('.mbtn').forEach(btn => {
   btn.addEventListener('click', () => setMode(btn.dataset.m));
 });
@@ -481,8 +508,8 @@ document.querySelectorAll('.dbtn').forEach(btn => {
   });
 });
 
+// ── Init ──────────────────────────────────────────────────────────────────────
 applyBg();
-discoverVideos();
 setMode('image');
 </script>
 </body>
