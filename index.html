@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title></title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #fff;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #screen {
+    flex: 1;
+    position: relative;
+    background: #fff;
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+    line-height: 1.0;
+    letter-spacing: 0;
+    white-space: pre;
+  }
+
+  #bar {
+    flex-shrink: 0;
+    height: 52px;
+    background: #f0f0f0;
+    border-top: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 18px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  #bar::-webkit-scrollbar { height: 3px; }
+  #bar::-webkit-scrollbar-thumb { background: #bbb; border-radius: 2px; }
+
+  .ctrl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-size: 11px;
+    color: #555;
+    font-family: 'Courier New', monospace;
+  }
+  .ctrl label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ctrl span  { font-size: 11px; color: #222; min-width: 26px; text-align: right; }
+
+  input[type=range] {
+    width: 80px; height: 3px;
+    accent-color: #222; cursor: pointer;
+  }
+
+  /* cerca */
+  #search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #search-input {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 5px 8px;
+    border-radius: 2px;
+    width: 140px;
+    outline: none;
+    color: #222;
+  }
+  #search-input:focus { border-color: #888; }
+  #search-input::placeholder { color: #bbb; }
+
+  .sep { width: 1px; height: 24px; background: #ccc; flex-shrink: 0; }
+
+  button {
+    background: #222;
+    color: #fff;
+    border: none;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: background 0.1s;
+  }
+  button:hover { background: #444; }
+  button:active { background: #000; }
+  button.inactive { background: #bbb; }
+
+  .dbtn {
+    background: #e0e0e0;
+    color: #555;
+    border: none;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.1s, color 0.1s;
+  }
+  .dbtn.active { background: #222; color: #fff; }
+
+  /* mode tabs */
+  .mode-group { display: flex; gap: 3px; }
+  .mbtn {
+    background: #e0e0e0; color: #555;
+    border: none; font-family: 'Courier New', monospace;
+    font-size: 11px; padding: 4px 10px;
+    cursor: pointer; border-radius: 2px;
+    transition: background 0.1s, color 0.1s;
+  }
+  .mbtn.active { background: #222; color: #fff; }
+
+  #label-right {
+    font-size: 10px; color: #aaa;
+    max-width: 160px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    font-family: 'Courier New', monospace;
+    margin-left: auto; flex-shrink: 0;
+  }
+
+  #msg {
+    position: absolute;
+    bottom: 12px; left: 12px;
+    font-size: 12px; color: #bbb;
+    pointer-events: none; line-height: 1.8;
+    font-family: 'Courier New', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div id="screen"><div id="msg"></div></div>
+
+<div id="bar">
+
+  <!-- mode -->
+  <div class="ctrl">
+    <label>font</label>
+    <div class="mode-group">
+      <button class="mbtn active" data-m="video">vídeo</button>
+      <button class="mbtn" data-m="image">imatge</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- vídeo controls -->
+  <div id="video-controls" style="display:flex;align-items:center;gap:16px;">
+    <button id="btn-shuffle">⟳ shuffle</button>
+  </div>
+
+  <!-- imatge controls -->
+  <div id="image-controls" style="display:none;align-items:center;gap:8px;">
+    <div id="search-wrap">
+      <input id="search-input" type="text" placeholder="paraula clau..." value="landscape">
+      <button id="btn-search">buscar</button>
+    </div>
+    <button id="btn-next-img">⟳ següent</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="ctrl">
+    <label>brightness</label>
+    <input type="range" id="sl-bright" min="0.2" max="3.0" value="1.0" step="0.05">
+    <span id="v-bright">1.0</span>
+  </div>
+
+  <div class="ctrl">
+    <label>saturation</label>
+    <input type="range" id="sl-sat" min="0" max="1.0" value="0.3" step="0.05">
+    <span id="v-sat">0.3</span>
+  </div>
+
+  <div class="ctrl">
+    <label>columns</label>
+    <input type="range" id="sl-cols" min="40" max="300" value="0" step="10">
+    <span id="v-cols">auto</span>
+  </div>
+
+  <div class="ctrl" id="fps-ctrl">
+    <label>fps</label>
+    <input type="range" id="sl-fps" min="4" max="30" value="30" step="1">
+    <span id="v-fps">30</span>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="ctrl">
+    <label>chars</label>
+    <div style="display:flex;gap:4px;">
+      <button class="dbtn" data-d="0">light</button>
+      <button class="dbtn active" data-d="1">color</button>
+      <button class="dbtn" data-d="2">block</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+  <button id="btn-bg">◑ fons: blanc</button>
+
+  <div id="label-right">—</div>
+</div>
+
+<video id="v" style="display:none" crossorigin="anonymous" loop muted playsinline preload="auto"></video>
+<canvas id="c" style="display:none"></canvas>
+<img id="img-src" style="display:none" crossorigin="anonymous">
+
+<script>
+const UNSPLASH_KEY    = 'yRPScUFRTKQQK6JEPfdqwQPlhq_UsliMq_irBvOvZn8';
+const LANDSCAPE_TAGS  = ['landscape','mountain','forest','city','urban','nature','architecture','street','ocean','desert','river','skyline'];
+const VIDEO_EXTENSIONS = ['mp4','webm','ogg','mov','mkv','avi'];
+
+const CHARS_LIGHT  = [' ',' ','.', ':','!','+','*','e','$','@','8'];
+const CHARS_COLOR  = ['.','*','e','s','◍'];
+const CHARS_FILLED = ['░','▒','▓','█'];
+const DENSITY_MAP  = [CHARS_LIGHT, CHARS_COLOR, CHARS_FILLED];
+
+let params = {
+  fps: 30, brightness: 1.0, satBoost: 0.3,
+  density: 1, colsOverride: 0, whiteBg: true,
+  mode: 'video', // 'video' | 'image'
+};
+
+let videoList    = [];
+let imageResults = [];
+let imageIdx     = 0;
+let rafId        = null;
+let lastT        = 0;
+let cols, rows;
+
+const video  = document.getElementById('v');
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+const imgSrc = document.getElementById('img-src');
+const screen = document.getElementById('screen');
+const msg    = document.getElementById('msg');
+const label  = document.getElementById('label-right');
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+function measureChar() {
+  const t = document.createElement('span');
+  t.style.cssText = 'position:absolute;visibility:hidden;font-family:"Courier New",Courier,monospace;font-weight:bold;font-size:10px;white-space:pre;';
+  t.textContent = 'MM';
+  document.body.appendChild(t);
+  const r = t.getBoundingClientRect();
+  document.body.removeChild(t);
+  return { w: r.width / 2, h: r.height };
+}
+
+function computeGrid() {
+  const { w: cw, h: ch } = measureChar();
+  const charW = cw * 2, charH = ch;
+  cols = params.colsOverride > 0 ? params.colsOverride : Math.floor(screen.clientWidth / charW);
+  rows = Math.floor(screen.clientHeight / charH);
+  const fs = screen.clientHeight / rows;
+  screen.style.fontSize = fs + 'px';
+  screen.style.lineHeight = fs + 'px';
+  canvas.width = cols; canvas.height = rows;
+}
+window.addEventListener('resize', () => { computeGrid(); if (params.mode === 'image') renderImageNow(); });
+computeGrid();
+
+// ── Color math ────────────────────────────────────────────────────────────────
+function rgbToHsv(r,g,b) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0, s=max===0?0:d/max, v=max;
+  if(d){ if(max===r) h=((g-b)/d)%6; else if(max===g) h=(b-r)/d+2; else h=(r-g)/d+4; h/=6; if(h<0)h+=1; }
+  return [h,s,v];
+}
+function hsvToRgb(h,s,v) {
+  const i=Math.floor(h*6),f=h*6-i,p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);
+  const c=[[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i%6];
+  return [c[0]*255,c[1]*255,c[2]*255];
+}
+function applyBrightSat(r,g,b) {
+  r=Math.min(255,r*params.brightness); g=Math.min(255,g*params.brightness); b=Math.min(255,b*params.brightness);
+  let [h,s,v]=rgbToHsv(r,g,b); s=Math.min(s+params.satBoost,1.0);
+  return hsvToRgb(h,s,v);
+}
+function rgbToBrightness(r,g,b) { return 0.267*r + 0.642*g + 0.091*b; }
+function brightnessToAscii(bright) {
+  const chars = DENSITY_MAP[params.density];
+  const mapped = params.whiteBg ? (255 - bright) : bright;
+  const idx = Math.floor((chars.length-1) * mapped / 255);
+  return chars[Math.max(0, Math.min(idx, chars.length-1))];
+}
+
+function pixelsToHtml(px, w, h) {
+  let html = '';
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      const i = (row*w+col)*4;
+      const r=px[i], g=px[i+1], b=px[i+2];
+      const bright = rgbToBrightness(r,g,b);
+      const ch     = brightnessToAscii(bright);
+      let [sr,sg,sb] = applyBrightSat(r,g,b);
+      if (params.whiteBg) {
+        const factor = 1 - (bright/255)*0.5;
+        sr*=factor; sg*=factor; sb*=factor;
+      }
+      html += `<span style="color:rgb(${sr|0},${sg|0},${sb|0})">${ch}${ch}</span>`;
+    }
+    html += '\n';
+  }
+  return html;
+}
+
+// ── Render vídeo (loop) ───────────────────────────────────────────────────────
+function renderLoop(ts) {
+  if (params.mode !== 'video') return;
+  rafId = requestAnimationFrame(renderLoop);
+  if (ts - lastT < 1000 / params.fps) return;
+  lastT = ts;
+  if (video.readyState < 2 || video.videoWidth === 0) return;
+  ctx.drawImage(video, 0, 0, cols, rows);
+  screen.innerHTML = pixelsToHtml(ctx.getImageData(0,0,cols,rows).data, cols, rows);
+}
+
+// ── Render imatge (estàtica, es crida un cop) ─────────────────────────────────
+function renderImageNow() {
+  if (!imgSrc.complete || !imgSrc.naturalWidth) return;
+  ctx.drawImage(imgSrc, 0, 0, cols, rows);
+  screen.innerHTML = pixelsToHtml(ctx.getImageData(0,0,cols,rows).data, cols, rows);
+}
+
+// ── Fons ──────────────────────────────────────────────────────────────────────
+function applyBg() {
+  const bg = params.whiteBg ? '#fff' : '#000';
+  screen.style.background = bg;
+  document.body.style.background = bg;
+  document.getElementById('btn-bg').textContent = params.whiteBg ? '◑ fons: blanc' : '◑ fons: negre';
+}
+
+// ── Mode switch ───────────────────────────────────────────────────────────────
+function setMode(m) {
+  params.mode = m;
+  document.querySelectorAll('.mbtn').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+  document.getElementById('video-controls').style.display = m === 'video' ? 'flex' : 'none';
+  document.getElementById('image-controls').style.display = m === 'image' ? 'flex' : 'none';
+  document.getElementById('fps-ctrl').style.display       = m === 'video' ? 'flex' : 'none';
+
+  if (m === 'video') {
+    video.play().catch(()=>{});
+    rafId = requestAnimationFrame(renderLoop);
+  } else {
+    video.pause();
+    cancelAnimationFrame(rafId);
+    if (imageResults.length === 0) fetchImages();
+    else renderImageNow();
+  }
+}
+
+// ── Unsplash ──────────────────────────────────────────────────────────────────
+async function fetchImages(query) {
+  if (!query) {
+    // paisatge aleatori si no hi ha cerca
+    query = LANDSCAPE_TAGS[Math.floor(Math.random() * LANDSCAPE_TAGS.length)];
+  }
+  showMsg('carregant imatges...');
+  try {
+    const url = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&count=20&orientation=landscape&client_id=${UNSPLASH_KEY}`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    imageResults = await res.json();
+    imageIdx = 0;
+    showMsg('');
+    showImage(imageResults[imageIdx]);
+  } catch(e) {
+    showMsg('error Unsplash: ' + e.message);
+  }
+}
+
+function showImage(photo) {
+  if (!photo) return;
+  const url = photo.urls.regular; // ~1080px, prou qualitat
+  label.textContent = photo.user.name + ' · unsplash';
+  imgSrc.onload = () => { showMsg(''); renderImageNow(); };
+  imgSrc.onerror = () => showMsg('error carregant imatge');
+  imgSrc.src = url;
+}
+
+function nextImage() {
+  if (imageResults.length === 0) { fetchImages(); return; }
+  imageIdx = (imageIdx + 1) % imageResults.length;
+  showImage(imageResults[imageIdx]);
+}
+
+// ── Vídeo ─────────────────────────────────────────────────────────────────────
+function loadVideo(name) {
+  video.src = 'videos/' + name;
+  video.load();
+  label.textContent = name;
+  video.play().catch(()=>{});
+}
+function shuffle() {
+  if (videoList.length === 0) return;
+  loadVideo(videoList[Math.floor(Math.random() * videoList.length)]);
+}
+video.addEventListener('ended', shuffle);
+video.addEventListener('error', () => {
+  const codes = {1:'ABORTED',2:'NETWORK',3:'DECODE',4:'SRC_NOT_SUPPORTED'};
+  showMsg('ERROR vídeo: ' + (codes[video.error?.code]||'?') + ' — converteix a .mp4');
+});
+
+async function discoverVideos() {
+  try {
+    const res  = await fetch('videos/');
+    const html = await res.text();
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+    videoList  = [...doc.querySelectorAll('a[href]')]
+      .map(a => a.getAttribute('href'))
+      .filter(h => VIDEO_EXTENSIONS.includes(h.split('.').pop().toLowerCase().split('?')[0]))
+      .map(h => h.replace(/^.*\//,''));
+    if (videoList.length > 0) shuffle();
+    else showMsg('// no hi ha vídeos a /videos/');
+  } catch(e) {
+    showMsg('// python3 -m http.server 8080');
+  }
+}
+
+function showMsg(t) { msg.textContent = t; }
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function bindSlider(id, valId, key, fmt, cb) {
+  const el = document.getElementById(id), out = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    params[key] = parseFloat(el.value);
+    out.textContent = fmt ? fmt(el.value) : el.value;
+    if (cb) cb();
+  });
+}
+bindSlider('sl-fps',    'v-fps',    'fps',          v => v);
+bindSlider('sl-bright', 'v-bright', 'brightness',   v => parseFloat(v).toFixed(1), () => { if(params.mode==='image') renderImageNow(); });
+bindSlider('sl-sat',    'v-sat',    'satBoost',     v => parseFloat(v).toFixed(2), () => { if(params.mode==='image') renderImageNow(); });
+bindSlider('sl-cols',   'v-cols',   'colsOverride', v => +v===0?'auto':v, () => { computeGrid(); if(params.mode==='image') renderImageNow(); });
+
+document.getElementById('btn-shuffle').addEventListener('click', shuffle);
+document.getElementById('btn-next-img').addEventListener('click', nextImage);
+document.getElementById('btn-search').addEventListener('click', () => {
+  const q = document.getElementById('search-input').value.trim();
+  if (q) fetchImages(q);
+});
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = e.target.value.trim();
+    if (q) fetchImages(q);
+  }
+});
+
+document.getElementById('btn-bg').addEventListener('click', () => {
+  params.whiteBg = !params.whiteBg;
+  applyBg();
+  if (params.mode === 'image') renderImageNow();
+});
+
+document.querySelectorAll('.mbtn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.m));
+});
+
+document.querySelectorAll('.dbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    params.density = parseInt(btn.dataset.d);
+    if (params.mode === 'image') renderImageNow();
+  });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+applyBg();
+discoverVideos();
+rafId = requestAnimationFrame(renderLoop);
+</script>
+</body>
+</html>
