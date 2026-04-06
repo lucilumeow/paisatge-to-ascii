@@ -11,11 +11,13 @@
     overflow: hidden;
     width: 100vw; height: 100vh;
     font-family: 'Courier New', Courier, monospace;
-    display: flex; flex-direction: column;
+    margin: 0;
   }
   #screen {
-    flex: 1;
-    position: relative;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     background: #000;
     overflow: hidden;
   }
@@ -38,10 +40,9 @@
     pointer-events: none;
     font-family: 'Courier New', monospace;
     z-index: 10;
+    transition: opacity 0.38s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  body.bg-white #screen { background: #fff; }
-  body.bg-white #msg-overlay { color: rgba(0,0,0,0.28); }
-
+  body.ui-collapsed #msg-overlay { opacity: 0; }
 
   .ctrl { display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0; }
   .ctrl label { font-size:9px; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:.02em; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; }
@@ -62,7 +63,8 @@
     border:1px solid rgba(255,255,255,0.13);
     font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; letter-spacing:-.01em;
     padding:5px 10px; cursor:pointer; border-radius:2px; white-space:nowrap;
-    transition:background .12s; flex-shrink:0;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.45, 0.64, 1);
+    flex-shrink:0;
   }
   button:hover  { background:rgba(255,255,255,0.18); }
   button:active { background:rgba(255,255,255,0.32); }
@@ -88,44 +90,105 @@
     margin-left:auto; flex-shrink:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
 
-  body.bg-white #bar { background:rgba(255,255,255,0.9); border-top:1px solid #ddd; }
-  body.bg-white .ctrl span  { color:rgba(0,0,0,0.8); }
-  body.bg-white input[type=range] { accent-color:rgba(0,0,0,0.6); }
-  body.bg-white input[type=text]  { border-color:rgba(0,0,0,0.18); background:rgba(0,0,0,0.05); color:#000; }
-  body.bg-white .sep { background:rgba(0,0,0,0.12); }
-  body.bg-white button { background:rgba(0,0,0,0.07); color:rgba(0,0,0,0.75); border-color:rgba(0,0,0,0.12); }
-  body.bg-white button:hover { background:rgba(0,0,0,0.14); }
-  body.bg-white .tbtn { background:rgba(0,0,0,0.05); color:rgba(0,0,0,0.38); border-color:rgba(0,0,0,0.09); }
-  body.bg-white .tbtn.on { background:rgba(0,0,0,0.16); color:#000; border-color:rgba(0,0,0,0.22); }
-  body.bg-white .dbtn { background:rgba(0,0,0,0.05); color:rgba(0,0,0,0.38); border-color:rgba(0,0,0,0.09); }
-  body.bg-white .dbtn.active { background:rgba(0,0,0,0.16); color:#000; }
-  body.bg-white #label-right { color:rgba(0,0,0,0.25); }
+  /* ── Chrome fix: barra sobre el canvas (fullscreen ASCII sota) ── */
+  #chrome {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+  }
+  #chrome #bar-clip,
+  #chrome #ui-handle { pointer-events: auto; }
+
+  /* Retalla la barra cap avall sense deixar forat al flux (ASCII a pantalla completa sota) */
+  #bar-clip {
+    width: 100%;
+    overflow: hidden;
+    max-height: 200px;
+    transition: max-height 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  body.ui-collapsed #bar-clip {
+    max-height: 0;
+    pointer-events: none;
+  }
+
+  #ui-handle {
+    width: 52px;
+    height: 5px;
+    margin: 0 0 4px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.88);
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(0,0,0,0.45);
+    font-size: 0;
+    line-height: 0;
+    transition: transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.35s ease, background 0.15s,
+      visibility 0.35s ease, height 0.35s ease, margin 0.35s ease, width 0.35s ease, box-shadow 0.35s ease;
+    overflow: hidden;
+  }
+  body.ui-collapsed.handle-idle-hidden #ui-handle {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    height: 0;
+    width: 0;
+    margin: 0;
+    box-shadow: none;
+  }
+  #ui-handle:hover {
+    transform: scaleX(1.12);
+    background: #fff;
+  }
+  #ui-handle:active { transform: scaleX(1.06) scaleY(0.92); }
 
   /* ── Single unified bar ── */
   #bar {
-    flex-shrink: 0; height: 52px;
-    background: rgba(0,0,0,0.88);
-    display: flex; align-items: center; gap: 14px;
-    padding: 0 16px;
-    overflow-x: auto; overflow-y: hidden;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+    min-height: 52px;
+    background: rgba(8,8,8,0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-top: 1px solid rgba(255,255,255,0.07);
   }
   #bar::-webkit-scrollbar { height: 3px; }
   #bar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
-  body.bg-white #bar { background: rgba(255,255,255,0.9); border-top-color: #ddd; }
 
-  /* ── Mode tabs integrats a la barra ── */
-  .mtab {
-    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35);
-    border: 1px solid rgba(255,255,255,0.09);
-    font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; font-size: 11px; letter-spacing: -.01em;
-    padding: 4px 9px; cursor: pointer; border-radius: 2px;
-    transition: all .1s; flex-shrink: 0; white-space: nowrap;
+  .tbtn:active, .dbtn:active { transform: scale(0.96); }
+
+  .density-switch {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.1);
   }
-  .mtab:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
-  .mtab.active { background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.25); }
-  body.bg-white .mtab { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.38); border-color: rgba(0,0,0,0.09); }
-  body.bg-white .mtab.active { background: rgba(0,0,0,0.16); color: #000; border-color: rgba(0,0,0,0.22); }
+  .density-switch .dbtn {
+    min-width: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.24s cubic-bezier(0.34, 1.55, 0.64, 1), background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.2s;
+  }
+  .density-switch .dbtn.active {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+  }
 </style>
 </head>
 <body>
@@ -136,7 +199,9 @@
   <div id="msg-overlay">// inicialitzant...</div>
 </div>
 
-<!-- BARRA ÚNICA -->
+<div id="chrome">
+<button type="button" id="ui-handle" aria-expanded="true" aria-controls="bar" title="Amaga o mostra la interfície (salvapantalles)"></button>
+<div id="bar-clip">
 <div id="bar">
   <!-- Mode toggle -->
   <div class="ctrl">
@@ -185,9 +250,9 @@
   <div id="ctrl-media" style="display:none;align-items:center;gap:14px;">
     <div class="ctrl">
       <label>tipus</label>
-      <div style="display:flex;gap:3px;">
-        <button class="dbtn active" data-mtype="video">vídeo</button>
-        <button class="dbtn" data-mtype="photo">foto</button>
+      <div class="density-switch" role="group" aria-label="tipus de mitjà">
+        <button type="button" class="dbtn active" data-mtype="video">vídeo</button>
+        <button type="button" class="dbtn" data-mtype="photo">foto</button>
       </div>
     </div>
     <div class="sep"></div>
@@ -218,13 +283,15 @@
   </div>
   <div class="ctrl">
     <label>car.</label>
-    <div style="display:flex;gap:3px;">
-      <button class="dbtn" data-d="0">llum</button>
-      <button class="dbtn active" data-d="1">color</button>
-      <button class="dbtn" data-d="2">bloc</button>
+    <div class="density-switch" role="group" aria-label="densitat de caràcters">
+      <button type="button" class="dbtn" data-d="0" title="densitat lleugera (+)">+</button>
+      <button type="button" class="dbtn active" data-d="1" title="mitjana (detall)">a</button>
+      <button type="button" class="dbtn" data-d="2" title="blocs (□)">□</button>
     </div>
   </div>
   <div id="label-right">—</div>
+</div>
+</div>
 </div>
 
 <!-- Hidden media elements -->
@@ -253,7 +320,7 @@ let params = {
   fps: 12, layerCount: 3,
   feather: 2.5,
   brightness: 1.0, satBoost: 0.3,
-  density: 1, whiteBg: false,
+  density: 1,
   sourceMode: 'video',  // 'video' | 'image'
 };
 
@@ -346,9 +413,8 @@ function applyBrightSat(r,g,b) {
 function rgbToBright(r,g,b) { return 0.267*r + 0.642*g + 0.091*b; }
 function brightToChar(bright) {
   const chars = DENSITY_MAP[params.density];
-  const mapped = params.whiteBg ? (255 - bright) : bright;
-  const idx = Math.floor((chars.length-1) * mapped / 255);
-  return chars[Math.max(0, Math.min(idx, chars.length-1))];
+  const idx = Math.floor((chars.length - 1) * bright / 255);
+  return chars[Math.max(0, Math.min(idx, chars.length - 1))];
 }
 
 // ═══════════════════════════════════════════
@@ -548,8 +614,7 @@ function buildComposite(ts) {
 // ASCII RENDER — canvas-based (no DOM spans)
 // ═══════════════════════════════════════════
 function renderAscii(comp) {
-  const bgColor = params.whiteBg ? '#fff' : '#000';
-  ctxAscii.fillStyle = bgColor;
+  ctxAscii.fillStyle = '#000';
   ctxAscii.fillRect(0, 0, cAscii.width, cAscii.height);
 
   // Re-apply font after clear (some browsers reset it)
@@ -566,11 +631,7 @@ function renderAscii(comp) {
       // Skip space chars entirely (background already filled)
       if (ch === ' ') continue;
 
-      let [sr, sg, sb] = applyBrightSat(r, g, b);
-      if (params.whiteBg) {
-        const f = 1 - (bright / 255) * 0.5;
-        sr *= f; sg *= f; sb *= f;
-      }
+      const [sr, sg, sb] = applyBrightSat(r, g, b);
 
       ctxAscii.fillStyle = `rgb(${sr|0},${sg|0},${sb|0})`;
       // Draw character doubled (two chars wide)
@@ -910,6 +971,128 @@ document.getElementById('m-img-query').addEventListener('keydown', e => {
   if (e.key === 'Enter') fetchMediaPhoto(e.target.value.trim());
 });
 document.getElementById('btn-m-img-next').addEventListener('click', nextMediaPhoto);
+
+// ═══════════════════════════════════════════
+// CHROME — autohide + handle (salvapantalles)
+// ═══════════════════════════════════════════
+const chromeEl = document.getElementById('chrome');
+const barClipEl = document.getElementById('bar-clip');
+const uiHandleEl = document.getElementById('ui-handle');
+const IDLE_HIDE_MS = 10000;
+const HANDLE_IDLE_HIDE_MS = 1000;
+let chromeHideTimer = null;
+let handleIdleTimer = null;
+
+function focusInChrome() {
+  const a = document.activeElement;
+  return chromeEl && a && a !== document.body && chromeEl.contains(a);
+}
+
+function clearChromeHideTimer() {
+  if (chromeHideTimer) {
+    clearTimeout(chromeHideTimer);
+    chromeHideTimer = null;
+  }
+}
+
+function clearHandleIdleTimer() {
+  if (handleIdleTimer) {
+    clearTimeout(handleIdleTimer);
+    handleIdleTimer = null;
+  }
+}
+
+function syncHandleHiddenState() {
+  const idleHidden = document.body.classList.contains('handle-idle-hidden');
+  uiHandleEl.setAttribute('aria-hidden', idleHidden ? 'true' : 'false');
+}
+
+function scheduleHandleHideWhenCollapsed() {
+  clearHandleIdleTimer();
+  if (!document.body.classList.contains('ui-collapsed')) return;
+  handleIdleTimer = setTimeout(() => {
+    document.body.classList.add('handle-idle-hidden');
+    syncHandleHiddenState();
+    handleIdleTimer = null;
+  }, HANDLE_IDLE_HIDE_MS);
+}
+
+function revealHandleWhenCollapsed() {
+  document.body.classList.remove('handle-idle-hidden');
+  syncHandleHiddenState();
+  scheduleHandleHideWhenCollapsed();
+}
+
+function scheduleChromeHide() {
+  clearChromeHideTimer();
+  if (document.body.classList.contains('ui-collapsed')) return;
+  if (focusInChrome()) return;
+  chromeHideTimer = setTimeout(() => {
+    document.body.classList.add('ui-collapsed');
+    uiHandleEl.setAttribute('aria-expanded', 'false');
+    if (barClipEl) barClipEl.inert = true;
+    chromeHideTimer = null;
+    scheduleHandleHideWhenCollapsed();
+  }, IDLE_HIDE_MS);
+}
+
+function setChromeCollapsed(collapsed) {
+  document.body.classList.toggle('ui-collapsed', collapsed);
+  uiHandleEl.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  if (barClipEl) barClipEl.inert = collapsed;
+  if (collapsed) {
+    clearChromeHideTimer();
+    document.body.classList.remove('handle-idle-hidden');
+    syncHandleHiddenState();
+    scheduleHandleHideWhenCollapsed();
+  } else {
+    clearHandleIdleTimer();
+    document.body.classList.remove('handle-idle-hidden');
+    syncHandleHiddenState();
+    scheduleChromeHide();
+  }
+}
+
+uiHandleEl.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setChromeCollapsed(!document.body.classList.contains('ui-collapsed'));
+});
+
+function onGlobalPointerActivity() {
+  if (document.body.classList.contains('ui-collapsed')) {
+    revealHandleWhenCollapsed();
+    return;
+  }
+  scheduleChromeHide();
+}
+
+document.addEventListener('mousemove', onGlobalPointerActivity, { passive: true });
+document.addEventListener('touchstart', onGlobalPointerActivity, { passive: true });
+
+chromeEl.addEventListener('focusin', () => {
+  clearChromeHideTimer();
+  if (document.body.classList.contains('ui-collapsed')) {
+    clearHandleIdleTimer();
+    document.body.classList.remove('handle-idle-hidden');
+    syncHandleHiddenState();
+  }
+});
+
+chromeEl.addEventListener('focusout', () => {
+  if (!document.body.classList.contains('ui-collapsed')) scheduleChromeHide();
+  else scheduleHandleHideWhenCollapsed();
+});
+
+document.addEventListener('wheel', (e) => {
+  if (document.body.classList.contains('ui-collapsed')) {
+    revealHandleWhenCollapsed();
+  } else if (chromeEl.contains(e.target)) {
+    scheduleChromeHide();
+  }
+}, { passive: true });
+
+syncHandleHiddenState();
+scheduleChromeHide();
 
 // ═══════════════════════════════════════════
 // INIT
