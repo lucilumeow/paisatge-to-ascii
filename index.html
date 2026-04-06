@@ -42,25 +42,15 @@
   body.bg-white #screen { background: #fff; }
   body.bg-white #msg-overlay { color: rgba(0,0,0,0.28); }
 
-  #bar {
-    flex-shrink: 0; height: 52px;
-    background: rgba(0,0,0,0.88);
-    display: flex; align-items: center; gap: 14px;
-    padding: 0 16px;
-    overflow-x: auto; overflow-y: hidden;
-    border-top: 1px solid rgba(255,255,255,0.1);
-  }
-  #bar::-webkit-scrollbar { height: 3px; }
-  #bar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
 
   .ctrl { display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0; }
-  .ctrl label { font-size:9px; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:.1em; font-family:'Courier New',monospace; }
-  .ctrl span  { font-size:11px; color:rgba(255,255,255,0.85); min-width:24px; text-align:right; font-family:'Courier New',monospace; }
+  .ctrl label { font-size:9px; color:rgba(255,255,255,0.38); text-transform:uppercase; letter-spacing:.02em; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; }
+  .ctrl span  { font-size:11px; color:rgba(255,255,255,0.85); min-width:24px; text-align:right; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:-.01em; }
   .sep { width:1px; height:22px; background:rgba(255,255,255,0.1); flex-shrink:0; }
 
   input[type=range] { width:72px; height:3px; accent-color:rgba(255,255,255,0.7); cursor:pointer; flex-shrink:0; }
   input[type=text] {
-    font-family:'Courier New',monospace; font-size:11px;
+    font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; letter-spacing:-.01em;
     border:1px solid rgba(255,255,255,0.13); background:rgba(255,255,255,0.07);
     padding:5px 8px; border-radius:2px; width:128px; outline:none; color:#fff; flex-shrink:0;
   }
@@ -70,7 +60,7 @@
   button {
     background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.75);
     border:1px solid rgba(255,255,255,0.13);
-    font-family:'Courier New',monospace; font-size:11px; letter-spacing:.06em;
+    font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; letter-spacing:-.01em;
     padding:5px 10px; cursor:pointer; border-radius:2px; white-space:nowrap;
     transition:background .12s; flex-shrink:0;
   }
@@ -80,7 +70,7 @@
   .tbtn {
     background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.35);
     border:1px solid rgba(255,255,255,0.09);
-    font-family:'Courier New',monospace; font-size:11px;
+    font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; letter-spacing:-.01em;
     padding:4px 9px; cursor:pointer; border-radius:2px; transition:all .1s; flex-shrink:0;
   }
   .tbtn.on { background:rgba(255,255,255,0.18); color:#fff; border-color:rgba(255,255,255,0.25); }
@@ -88,18 +78,17 @@
   .dbtn {
     background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.38);
     border:1px solid rgba(255,255,255,0.09);
-    font-family:'Courier New',monospace; font-size:11px;
+    font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; letter-spacing:-.01em;
     padding:4px 8px; cursor:pointer; border-radius:2px; transition:all .1s; flex-shrink:0;
   }
   .dbtn.active { background:rgba(255,255,255,0.2); color:#fff; border-color:rgba(255,255,255,0.26); }
 
   #label-right {
-    font-size:10px; color:rgba(255,255,255,0.2); font-family:'Courier New',monospace;
+    font-size:10px; color:rgba(255,255,255,0.2); font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:-.01em;
     margin-left:auto; flex-shrink:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
 
   body.bg-white #bar { background:rgba(255,255,255,0.9); border-top:1px solid #ddd; }
-  body.bg-white .ctrl label { color:rgba(0,0,0,0.4); }
   body.bg-white .ctrl span  { color:rgba(0,0,0,0.8); }
   body.bg-white input[type=range] { accent-color:rgba(0,0,0,0.6); }
   body.bg-white input[type=text]  { border-color:rgba(0,0,0,0.18); background:rgba(0,0,0,0.05); color:#000; }
@@ -111,55 +100,118 @@
   body.bg-white .dbtn { background:rgba(0,0,0,0.05); color:rgba(0,0,0,0.38); border-color:rgba(0,0,0,0.09); }
   body.bg-white .dbtn.active { background:rgba(0,0,0,0.16); color:#000; }
   body.bg-white #label-right { color:rgba(0,0,0,0.25); }
+
+  /* ── Single unified bar ── */
+  #bar {
+    flex-shrink: 0; height: 52px;
+    background: rgba(0,0,0,0.88);
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 16px;
+    overflow-x: auto; overflow-y: hidden;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  #bar::-webkit-scrollbar { height: 3px; }
+  #bar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  body.bg-white #bar { background: rgba(255,255,255,0.9); border-top-color: #ddd; }
+
+  /* ── Mode tabs integrats a la barra ── */
+  .mtab {
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.35);
+    border: 1px solid rgba(255,255,255,0.09);
+    font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; font-size: 11px; letter-spacing: -.01em;
+    padding: 4px 9px; cursor: pointer; border-radius: 2px;
+    transition: all .1s; flex-shrink: 0; white-space: nowrap;
+  }
+  .mtab:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+  .mtab.active { background: rgba(255,255,255,0.18); color: #fff; border-color: rgba(255,255,255,0.25); }
+  body.bg-white .mtab { background: rgba(0,0,0,0.05); color: rgba(0,0,0,0.38); border-color: rgba(0,0,0,0.09); }
+  body.bg-white .mtab.active { background: rgba(0,0,0,0.16); color: #000; border-color: rgba(0,0,0,0.22); }
 </style>
 </head>
 <body>
 
 <div id="screen">
-  <!-- ASCII canvas: renders text glyphs via canvas 2D API -->
   <canvas id="c-ascii"></canvas>
-  <!-- Passthrough canvas: renders raw composited pixels when ASCII is off -->
   <canvas id="c-passthrough"></canvas>
   <div id="msg-overlay">// inicialitzant...</div>
 </div>
 
+<!-- BARRA ÚNICA -->
 <div id="bar">
+  <!-- Mode tabs -->
+  <button class="mtab active" data-mode="compositor">compositor</button>
+  <button class="mtab" data-mode="media">media</button>
+
+  <div class="sep"></div>
+
+  <!-- Controls mode compositor -->
+  <div id="ctrl-compositor" style="display:flex;align-items:center;gap:14px;">
+    <div class="ctrl">
+      <label>fons</label>
+      <input type="text" id="bg-query" value="nature landscape" placeholder="fons...">
+      <button id="btn-bg-search">buscar</button>
+      <button id="btn-bg-next">&#x27F3;</button>
+      <button class="tbtn" id="btn-bg-lock" title="bloquejar canvi automàtic">&#x1F512;</button>
+    </div>
+    <div class="sep"></div>
+    <div class="ctrl">
+      <label>capes</label>
+      <input type="text" id="ov-query" value="animal" placeholder="capes...">
+      <button id="btn-ov-search">buscar</button>
+    </div>
+    <div class="sep"></div>
+    <div class="ctrl">
+      <label>capes #</label>
+      <input type="range" id="sl-layers" min="0" max="6" value="3" step="1">
+      <span id="v-layers">3</span>
+    </div>
+    <div class="ctrl">
+      <label>suavitat</label>
+      <input type="range" id="sl-feather" min="0" max="5" value="2.5" step="0.1">
+      <span id="v-feather">2.5</span>
+    </div>
+  </div>
+
+  <!-- Controls mode media -->
+  <div id="ctrl-media" style="display:none;align-items:center;gap:14px;">
+    <div class="ctrl">
+      <label>tipus</label>
+      <div style="display:flex;gap:3px;">
+        <button class="dbtn active" data-mtype="video">vídeo</button>
+        <button class="dbtn" data-mtype="photo">foto</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div class="ctrl" id="ctrl-m-video">
+      <input type="text" id="m-vid-query" value="nature landscape" placeholder="cerca vídeo...">
+      <button id="btn-m-vid-search">buscar</button>
+      <button id="btn-m-vid-next">&#x27F3;</button>
+    </div>
+    <div class="ctrl" id="ctrl-m-photo" style="display:none">
+      <input type="text" id="m-img-query" value="nature landscape" placeholder="cerca foto...">
+      <button id="btn-m-img-search">buscar</button>
+      <button id="btn-m-img-next">&#x27F3;</button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- Controls globals (sempre visibles) -->
   <div class="ctrl">
     <label>ascii</label>
     <button class="tbtn on" id="btn-ascii">on</button>
   </div>
-
   <div class="sep"></div>
-
-  <div class="ctrl">
-    <label>fons</label>
-    <input type="text" id="bg-query" value="nature landscape" placeholder="fons video...">
-    <button id="btn-bg-search">buscar</button>
-    <button id="btn-bg-next">&#x27F3;</button>
-  </div>
-
-  <div class="sep"></div>
-
-  <div class="ctrl">
-    <label>capes</label>
-    <input type="text" id="ov-query" value="animal" placeholder="capes...">
-    <button id="btn-ov-search">buscar</button>
-  </div>
-
-  <div class="sep"></div>
-
   <div class="ctrl">
     <label>llum</label>
     <input type="range" id="sl-bright" min="0.2" max="3.0" value="1.0" step="0.05">
     <span id="v-bright">1.0</span>
   </div>
-
   <div class="ctrl">
     <label>sat</label>
     <input type="range" id="sl-sat" min="0" max="1.0" value="0.3" step="0.05">
     <span id="v-sat">0.3</span>
   </div>
-
   <div class="ctrl">
     <label>car.</label>
     <div style="display:flex;gap:3px;">
@@ -168,31 +220,13 @@
       <button class="dbtn" data-d="2">bloc</button>
     </div>
   </div>
-
-  <div class="sep"></div>
-
-  <div class="ctrl">
-    <label>capes #</label>
-    <input type="range" id="sl-layers" min="1" max="6" value="3" step="1">
-    <span id="v-layers">3</span>
-  </div>
-
   <div class="ctrl">
     <label>fps</label>
     <input type="range" id="sl-fps" min="5" max="30" value="12" step="1">
     <span id="v-fps">12</span>
   </div>
-
-  <div class="ctrl">
-    <label>suavitat</label>
-    <input type="range" id="sl-feather" min="0" max="5" value="2.5" step="0.1">
-    <span id="v-feather">2.5</span>
-  </div>
-
   <div class="sep"></div>
-
-  <button id="btn-bg">&#x25D1; fons: negre</button>
-
+  <button id="btn-bg-col">&#x25D1; fons: negre</button>
   <div id="label-right">—</div>
 </div>
 
@@ -222,9 +256,13 @@ let params = {
   feather: 2.5,
   brightness: 1.0, satBoost: 0.3,
   density: 1, whiteBg: false,
+  sourceMode: 'video',  // 'video' | 'image'
 };
 
 let bgVideoList = [], bgIdx = 0;
+let bgImageList = [], bgImgIdx = 0;
+let bgImage = null;          // Image element actiu en mode imatge
+let bgImgAutoTimer = null;
 let overlayAssets = [];
 let layers = [];
 let cols, rows;
@@ -566,15 +604,29 @@ function renderFrame(ts) {
   rafId = requestAnimationFrame(renderFrame);
   if (ts - lastT < 1000 / params.fps) return;
   lastT = ts;
-  if (bgVid.readyState < 2 || !bgVid.videoWidth) return;
 
-  const comp = buildComposite(ts);
-
-  if (params.ascii) {
-    renderAscii(comp);
-  } else {
-    renderPassthrough(comp);
+  if (params.appMode === 'media') {
+    // Mode 2: només foto o vídeo, sense capes
+    const isPhoto = params.mediaType === 'photo';
+    if (isPhoto) {
+      if (!mImg || !mImg.complete || !mImg.naturalWidth) return;
+      ctxBg.drawImage(mImg, 0, 0, cols, rows);
+    } else {
+      if (bgVid.readyState < 2 || !bgVid.videoWidth) return;
+      ctxBg.drawImage(bgVid, 0, 0, cols, rows);
+    }
+    const bgPx = ctxBg.getImageData(0, 0, cols, rows).data;
+    const comp  = new Uint8ClampedArray(bgPx);
+    if (params.ascii) renderAscii(comp);
+    else renderPassthrough(comp);
+    return;
   }
+
+  // Mode 1: compositor (vídeo + capes)
+  if (bgVid.readyState < 2 || !bgVid.videoWidth) return;
+  const comp = buildComposite(ts);
+  if (params.ascii) renderAscii(comp);
+  else renderPassthrough(comp);
 }
 
 // ═══════════════════════════════════════════
@@ -607,16 +659,18 @@ async function fetchBgVideos(query) {
 
 let bgAutoTimer = null;
 
-function nextBgVideo() {
+function scheduleNextBg() {
+  if (bgAutoTimer) clearTimeout(bgAutoTimer);
+  if (!bgLocked) bgAutoTimer = setTimeout(() => nextBgVideo(false), rnd(10000, 20000));
+}
+
+function nextBgVideo(manual = false) {
   if (!bgVideoList.length) return;
   bgIdx = (bgIdx + 1) % bgVideoList.length;
   const it = bgVideoList[bgIdx];
   bgVid.src = it.url; bgVid.load(); bgVid.play().catch(() => {});
   label.textContent = it.name + ' · pexels';
-
-  // Schedule next auto-change: 10–20s
-  if (bgAutoTimer) clearTimeout(bgAutoTimer);
-  bgAutoTimer = setTimeout(nextBgVideo, rnd(10000, 20000));
+  scheduleNextBg();
 }
 // No canviem per 'ended'; el timer ho gestiona
 
@@ -654,11 +708,108 @@ async function fetchOverlayAssets(query) {
   buildLayers();
 }
 
+async function fetchBgImages(query) {
+  if (!query) query = pick(TAGS);
+  showMsg('// carregant imatges...');
+  try {
+    const res = await fetch(
+      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&count=20&orientation=landscape&client_id=${UNSPLASH_KEY}`
+    );
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    bgImageList = data.map(p => ({ url: p.urls.full, name: p.user.name }));
+    bgImgIdx = -1;
+    showMsg('');
+    if (bgImageList.length) nextBgImage();
+    else showMsg('// sense imatges');
+  } catch(e) { showMsg('// error: ' + e.message); }
+}
+
+function nextBgImage() {
+  if (!bgImageList.length) return;
+  bgImgIdx = (bgImgIdx + 1) % bgImageList.length;
+  const it = bgImageList[bgImgIdx];
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = it.url;
+  img.onload = () => { bgImage = img; };
+  label.textContent = it.name + ' · unsplash';
+  if (bgImgAutoTimer) clearTimeout(bgImgAutoTimer);
+  bgImgAutoTimer = setTimeout(nextBgImage, rnd(10000, 20000));
+}
+
+// ── Mode 2: fetch de vídeo i foto independents ──
+let mVidList = [], mVidIdx = 0;
+let mImgList = [], mImgIdx = 0;
+let mVid = null;   // <video> actiu en mode 2
+let mImg = null;   // <img> activa en mode 2
+const labelM = document.getElementById('label-right');
+
+async function fetchMediaVideo(query) {
+  if (!query) query = pick(TAGS);
+  showMsg('// carregant vídeo...');
+  try {
+    const res = await fetch(
+      `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=20&orientation=landscape`,
+      { headers: { Authorization: PEXELS_KEY } }
+    );
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    mVidList = data.videos.map(v => {
+      const hd = v.video_files.find(f => f.quality === 'hd') || v.video_files[0];
+      return { url: hd.link, name: v.user.name };
+    });
+    mVidIdx = -1;
+    showMsg('');
+    if (mVidList.length) nextMediaVideo();
+    else showMsg('// sense vídeos');
+  } catch(e) { showMsg('// error: ' + e.message); }
+}
+
+function nextMediaVideo() {
+  if (!mVidList.length) return;
+  mVidIdx = (mVidIdx + 1) % mVidList.length;
+  const it = mVidList[mVidIdx];
+  // Reutilitzem bgVid però en mode 2 no hi ha capes
+  bgVid.src = it.url; bgVid.load(); bgVid.play().catch(() => {});
+  mVid = bgVid;
+  labelM.textContent = it.name + ' · pexels';
+}
+
+async function fetchMediaPhoto(query) {
+  if (!query) query = pick(TAGS);
+  showMsg('// carregant foto...');
+  try {
+    const res = await fetch(
+      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&count=20&orientation=landscape&client_id=${UNSPLASH_KEY}`
+    );
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    mImgList = data.map(p => ({ url: p.urls.full, name: p.user.name }));
+    mImgIdx = -1;
+    showMsg('');
+    if (mImgList.length) nextMediaPhoto();
+    else showMsg('// sense fotos');
+  } catch(e) { showMsg('// error: ' + e.message); }
+}
+
+function nextMediaPhoto() {
+  if (!mImgList.length) return;
+  mImgIdx = (mImgIdx + 1) % mImgList.length;
+  const it = mImgList[mImgIdx];
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = it.url;
+  img.onload = () => { mImg = img; };
+  labelM.textContent = it.name + ' · unsplash';
+}
+
 // ═══════════════════════════════════════════
 // CONTROLS
 // ═══════════════════════════════════════════
 function bindSlider(id, valId, key, fmt, cb) {
   const el = document.getElementById(id), out = document.getElementById(valId);
+  if (!el) return;
   el.addEventListener('input', () => {
     params[key] = parseFloat(el.value);
     out.textContent = fmt ? fmt(el.value) : el.value;
@@ -666,61 +817,114 @@ function bindSlider(id, valId, key, fmt, cb) {
   });
 }
 
-bindSlider('sl-layers',  'v-layers',  'layerCount', v => v + '',        buildLayers);
+// Sliders globals (únics)
+bindSlider('sl-layers',  'v-layers',  'layerCount', v => v + '', buildLayers);
 bindSlider('sl-fps',     'v-fps',     'fps',        v => v + '');
 bindSlider('sl-bright',  'v-bright',  'brightness', v => parseFloat(v).toFixed(1));
 bindSlider('sl-sat',     'v-sat',     'satBoost',   v => parseFloat(v).toFixed(2));
 bindSlider('sl-feather', 'v-feather', 'feather',    v => parseFloat(v).toFixed(1), buildLayers);
 
-document.getElementById('btn-ascii').addEventListener('click', () => {
-  params.ascii = !params.ascii;
-  document.getElementById('btn-ascii').classList.toggle('on', params.ascii);
+// ASCII toggle (únic)
+function toggleAscii(val) {
+  params.ascii = val;
+  document.getElementById('btn-ascii').classList.toggle('on', val);
+  cAscii.style.display = val ? 'block' : 'none';
+  cPass.style.display  = val ? 'none'  : 'block';
+}
+document.getElementById('btn-ascii').addEventListener('click', () => toggleAscii(!params.ascii));
 
-  if (params.ascii) {
-    // Show ASCII canvas, hide passthrough
-    cAscii.style.display = 'block';
-    cPass.style.display  = 'none';
-  } else {
-    // Hide ASCII canvas, show passthrough (raw video+layers)
-    cAscii.style.display = 'none';
-    cPass.style.display  = 'block';
-  }
+// Mode tabs
+document.querySelectorAll('.mtab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    params.appMode = tab.dataset.mode;
+    const isCompositor = params.appMode === 'compositor';
+    document.getElementById('ctrl-compositor').style.display = isCompositor ? 'flex' : 'none';
+    document.getElementById('ctrl-media').style.display      = isCompositor ? 'none' : 'flex';
+    if (!isCompositor && !mVidList.length && !mImgList.length) {
+      fetchMediaVideo(document.getElementById('m-vid-query').value.trim());
+    }
+  });
 });
 
+// Fons (mode compositor)
+let bgLocked = false;
 document.getElementById('btn-bg-search').addEventListener('click', () =>
   fetchBgVideos(document.getElementById('bg-query').value.trim()));
 document.getElementById('bg-query').addEventListener('keydown', e => {
   if (e.key === 'Enter') fetchBgVideos(e.target.value.trim());
 });
-document.getElementById('btn-bg-next').addEventListener('click', nextBgVideo);
+document.getElementById('btn-bg-next').addEventListener('click', () => {
+  bgLocked = false; nextBgVideo(true);
+});
+document.getElementById('btn-bg-lock').addEventListener('click', () => {
+  bgLocked = !bgLocked;
+  document.getElementById('btn-bg-lock').classList.toggle('on', bgLocked);
+  if (!bgLocked) scheduleNextBg();
+});
 
+// Capes (mode compositor)
 document.getElementById('btn-ov-search').addEventListener('click', () =>
   fetchOverlayAssets(document.getElementById('ov-query').value.trim()));
 document.getElementById('ov-query').addEventListener('keydown', e => {
   if (e.key === 'Enter') fetchOverlayAssets(e.target.value.trim());
 });
 
-document.querySelectorAll('.dbtn').forEach(btn => {
+// Caràcters (únics, data-d)
+document.querySelectorAll('[data-d]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.dbtn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[data-d]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     params.density = parseInt(btn.dataset.d);
   });
 });
 
-document.getElementById('btn-bg').addEventListener('click', () => {
+// Fons negre/blanc (únic)
+function toggleBgColor() {
   params.whiteBg = !params.whiteBg;
   const bg = params.whiteBg ? '#fff' : '#000';
   screenEl.style.background = bg;
   document.body.style.background = bg;
   document.body.classList.toggle('bg-white', params.whiteBg);
-  document.getElementById('btn-bg').textContent = params.whiteBg ? '◑ fons: blanc' : '◑ fons: negre';
+  document.getElementById('btn-bg-col').textContent = params.whiteBg ? '◑ fons: blanc' : '◑ fons: negre';
+}
+document.getElementById('btn-bg-col').addEventListener('click', toggleBgColor);
+
+// Mode media: tipus foto/vídeo
+document.querySelectorAll('[data-mtype]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-mtype]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    params.mediaType = btn.dataset.mtype;
+    const isPhoto = params.mediaType === 'photo';
+    document.getElementById('ctrl-m-video').style.display = isPhoto ? 'none' : '';
+    document.getElementById('ctrl-m-photo').style.display = isPhoto ? '' : 'none';
+    if (isPhoto && !mImgList.length) fetchMediaPhoto(document.getElementById('m-img-query').value.trim());
+    else if (!isPhoto && !mVidList.length) fetchMediaVideo(document.getElementById('m-vid-query').value.trim());
+  });
 });
+
+document.getElementById('btn-m-vid-search').addEventListener('click', () =>
+  fetchMediaVideo(document.getElementById('m-vid-query').value.trim()));
+document.getElementById('m-vid-query').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchMediaVideo(e.target.value.trim());
+});
+document.getElementById('btn-m-vid-next').addEventListener('click', nextMediaVideo);
+
+document.getElementById('btn-m-img-search').addEventListener('click', () =>
+  fetchMediaPhoto(document.getElementById('m-img-query').value.trim()));
+document.getElementById('m-img-query').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchMediaPhoto(e.target.value.trim());
+});
+document.getElementById('btn-m-img-next').addEventListener('click', nextMediaPhoto);
 
 // ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 (async function init() {
+  params.appMode   = 'compositor';
+  params.mediaType = 'video';
   rafId = requestAnimationFrame(renderFrame);
   await fetchBgVideos('nature landscape');
   await fetchOverlayAssets('animal');
