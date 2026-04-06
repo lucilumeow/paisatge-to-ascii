@@ -138,9 +138,23 @@
 
 <!-- BARRA ÚNICA -->
 <div id="bar">
-  <!-- Mode tabs -->
-  <button class="mtab active" data-mode="compositor">compositor</button>
-  <button class="mtab" data-mode="media">media</button>
+  <!-- Mode toggle -->
+  <div class="ctrl">
+    <label>mode</label>
+    <button class="tbtn on" id="btn-mode-toggle">compositor</button>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- ASCII + Freeze (globals, sempre visibles) -->
+  <div class="ctrl">
+    <label>ascii</label>
+    <button class="tbtn on" id="btn-ascii">on</button>
+  </div>
+  <div class="ctrl">
+    <label>freeze</label>
+    <button class="tbtn" id="btn-freeze">❄</button>
+  </div>
 
   <div class="sep"></div>
 
@@ -158,15 +172,10 @@
       <label>capes</label>
       <input type="text" id="ov-query" value="animal" placeholder="capes...">
       <button id="btn-ov-search">buscar</button>
-    </div>
-    <div class="sep"></div>
-    <div class="ctrl">
-      <label>capes #</label>
+      <label style="font-size:9px;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:.02em;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">capes #</label>
       <input type="range" id="sl-layers" min="0" max="6" value="3" step="1">
       <span id="v-layers">3</span>
-    </div>
-    <div class="ctrl">
-      <label>suavitat</label>
+      <label style="font-size:9px;color:rgba(255,255,255,0.38);text-transform:uppercase;letter-spacing:.02em;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">suavitat</label>
       <input type="range" id="sl-feather" min="0" max="5" value="2.5" step="0.1">
       <span id="v-feather">2.5</span>
     </div>
@@ -196,12 +205,7 @@
 
   <div class="sep"></div>
 
-  <!-- Controls globals (sempre visibles) -->
-  <div class="ctrl">
-    <label>ascii</label>
-    <button class="tbtn on" id="btn-ascii">on</button>
-  </div>
-  <div class="sep"></div>
+  <!-- Settings globals -->
   <div class="ctrl">
     <label>llum</label>
     <input type="range" id="sl-bright" min="0.2" max="3.0" value="1.0" step="0.05">
@@ -220,13 +224,6 @@
       <button class="dbtn" data-d="2">bloc</button>
     </div>
   </div>
-  <div class="ctrl">
-    <label>fps</label>
-    <input type="range" id="sl-fps" min="5" max="30" value="12" step="1">
-    <span id="v-fps">12</span>
-  </div>
-  <div class="sep"></div>
-  <button id="btn-bg-col">&#x25D1; fons: negre</button>
   <div id="label-right">—</div>
 </div>
 
@@ -252,6 +249,7 @@ const DENSITY_MAP  = [CHARS_LIGHT, CHARS_COLOR, CHARS_FILLED];
 // ═══════════════════════════════════════════
 let params = {
   ascii: true,
+  frozen: false,
   fps: 12, layerCount: 3,
   feather: 2.5,
   brightness: 1.0, satBoost: 0.3,
@@ -602,6 +600,7 @@ function renderPassthrough(comp) {
 // ═══════════════════════════════════════════
 function renderFrame(ts) {
   rafId = requestAnimationFrame(renderFrame);
+  if (params.frozen) return;
   if (ts - lastT < 1000 / params.fps) return;
   lastT = ts;
 
@@ -819,12 +818,17 @@ function bindSlider(id, valId, key, fmt, cb) {
 
 // Sliders globals (únics)
 bindSlider('sl-layers',  'v-layers',  'layerCount', v => v + '', buildLayers);
-bindSlider('sl-fps',     'v-fps',     'fps',        v => v + '');
 bindSlider('sl-bright',  'v-bright',  'brightness', v => parseFloat(v).toFixed(1));
 bindSlider('sl-sat',     'v-sat',     'satBoost',   v => parseFloat(v).toFixed(2));
 bindSlider('sl-feather', 'v-feather', 'feather',    v => parseFloat(v).toFixed(1), buildLayers);
 
-// ASCII toggle (únic)
+// Freeze
+document.getElementById('btn-freeze').addEventListener('click', () => {
+  params.frozen = !params.frozen;
+  document.getElementById('btn-freeze').classList.toggle('on', params.frozen);
+});
+
+// ASCII toggle
 function toggleAscii(val) {
   params.ascii = val;
   document.getElementById('btn-ascii').classList.toggle('on', val);
@@ -833,19 +837,18 @@ function toggleAscii(val) {
 }
 document.getElementById('btn-ascii').addEventListener('click', () => toggleAscii(!params.ascii));
 
-// Mode tabs
-document.querySelectorAll('.mtab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    params.appMode = tab.dataset.mode;
-    const isCompositor = params.appMode === 'compositor';
-    document.getElementById('ctrl-compositor').style.display = isCompositor ? 'flex' : 'none';
-    document.getElementById('ctrl-media').style.display      = isCompositor ? 'none' : 'flex';
-    if (!isCompositor && !mVidList.length && !mImgList.length) {
-      fetchMediaVideo(document.getElementById('m-vid-query').value.trim());
-    }
-  });
+// Mode toggle (compositor ↔ media)
+document.getElementById('btn-mode-toggle').addEventListener('click', () => {
+  const isCompositor = params.appMode === 'compositor';
+  params.appMode = isCompositor ? 'media' : 'compositor';
+  const btn = document.getElementById('btn-mode-toggle');
+  btn.textContent = params.appMode;
+  btn.classList.toggle('on', params.appMode === 'compositor');
+  document.getElementById('ctrl-compositor').style.display = params.appMode === 'compositor' ? 'flex' : 'none';
+  document.getElementById('ctrl-media').style.display      = params.appMode === 'media'      ? 'flex' : 'none';
+  if (params.appMode === 'media' && !mVidList.length && !mImgList.length) {
+    fetchMediaVideo(document.getElementById('m-vid-query').value.trim());
+  }
 });
 
 // Fons (mode compositor)
@@ -879,17 +882,6 @@ document.querySelectorAll('[data-d]').forEach(btn => {
     params.density = parseInt(btn.dataset.d);
   });
 });
-
-// Fons negre/blanc (únic)
-function toggleBgColor() {
-  params.whiteBg = !params.whiteBg;
-  const bg = params.whiteBg ? '#fff' : '#000';
-  screenEl.style.background = bg;
-  document.body.style.background = bg;
-  document.body.classList.toggle('bg-white', params.whiteBg);
-  document.getElementById('btn-bg-col').textContent = params.whiteBg ? '◑ fons: blanc' : '◑ fons: negre';
-}
-document.getElementById('btn-bg-col').addEventListener('click', toggleBgColor);
 
 // Mode media: tipus foto/vídeo
 document.querySelectorAll('[data-mtype]').forEach(btn => {
