@@ -908,6 +908,52 @@ function renderFrame(ts) {
   else renderPassthrough(comp);
 }
 
+let pdfFontBase64 = null;
+let pdfFontName = 'DejaVuSansMono';
+
+async function loadPdfFontBase64() {
+  if (pdfFontBase64) return pdfFontBase64;
+
+  const urls = [
+    'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSansMono-Bold.ttf',
+    'https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.3/ttf/DejaVuSansMono.ttf',
+  ];
+
+  let lastErr = null;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const buf = await res.arrayBuffer();
+      let binary = '';
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      pdfFontBase64 = btoa(binary);
+      return pdfFontBase64;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('No s\'ha pogut carregar la font PDF');
+}
+
+async function ensurePdfFont(pdf) {
+  // jsPDF needs the font registered on the doc instance.
+  try {
+    const b64 = await loadPdfFontBase64();
+    const filename = 'DejaVuSansMono.ttf';
+    pdf.addFileToVFS(filename, b64);
+    pdf.addFont(filename, pdfFontName, 'normal');
+    pdf.setFont(pdfFontName, 'normal');
+  } catch (e) {
+    // Fallback: keep courier if font can't load (glyphs may not render for blocks)
+    pdf.setFont('courier', 'bold');
+  }
+}
+
 function drawAsciiVectorPage(pdf, comp, opts) {
   const bg = opts.bg;                 // '#000' | '#fff'
   const fg = opts.fg || null;         // null => per-char color
@@ -922,7 +968,6 @@ function drawAsciiVectorPage(pdf, comp, opts) {
   pdf.rect(0, 0, pageW, pageH, 'F');
 
   // Font + size: keep it close to canvas pixel grid.
-  pdf.setFont('courier', 'bold');
   pdf.setFontSize(charH);
 
   // jsPDF baseline isn't always 'top' across versions; offset Y a bit to align.
@@ -976,16 +1021,19 @@ async function downloadPdfFrame() {
       format: [pageW, pageH],
       compress: true,
     });
+    await ensurePdfFont(pdf);
 
     // Page 1: black bg + colored glyphs (vector, selectable).
     drawAsciiVectorPage(pdf, lastComp, { bg: '#000', colorize: true });
 
     // Page 2: black bg + white glyphs.
     pdf.addPage([pageW, pageH], 'landscape');
+    await ensurePdfFont(pdf);
     drawAsciiVectorPage(pdf, lastComp, { bg: '#000', fg: '#fff', colorize: false });
 
     // Page 3: white bg + black glyphs, with inverted brightness mapping.
     pdf.addPage([pageW, pageH], 'landscape');
+    await ensurePdfFont(pdf);
     drawAsciiVectorPage(pdf, lastComp, { bg: '#fff', fg: '#000', invert: true, colorize: false });
 
     pdf.save('ascii-frame.pdf');
