@@ -89,9 +89,10 @@
   }
   .dbtn.active { background:rgba(255,255,255,0.2); color:#fff; border-color:rgba(255,255,255,0.26); }
 
-  #label-right {
-    font-size:10px; color:rgba(255,255,255,0.2); font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:-.01em;
-    margin-left:auto; flex-shrink:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  #btn-pdf {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 11px;
   }
 
   /* ── Chrome fix: barra sobre el canvas (fullscreen ASCII sota) ── */
@@ -357,7 +358,7 @@
       display: none;
     }
 
-    #label-right {
+    #btn-pdf {
       margin-left: 0;
       max-width: none;
       width: 100%;
@@ -501,7 +502,7 @@
       <button type="button" class="dbtn" data-d="2" title="blocs (□)">□</button>
     </div>
   </div>
-  <div id="label-right">—</div>
+  <button type="button" class="tbtn" id="btn-pdf" title="Descarrega el frame actual en PDF (3 pàgines)">pdf</button>
 </div>
 </div>
 </div>
@@ -509,6 +510,7 @@
 <!-- Hidden media elements -->
 <video id="bg-vid" style="display:none" crossorigin="anonymous" loop muted playsinline preload="auto"></video>
 <canvas id="c-bg" style="display:none"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
 // ═══════════════════════════════════════════
@@ -556,7 +558,10 @@ const cPass       = document.getElementById('c-passthrough');
 const ctxPass     = cPass.getContext('2d');
 const screenEl    = document.getElementById('screen');
 const msgOverlay  = document.getElementById('msg-overlay');
-const label       = document.getElementById('label-right');
+const btnPdf      = document.getElementById('btn-pdf');
+
+// Guardem l'últim frame compositat (cols×rows RGBA) per exportar-lo a PDF.
+let lastComp = null;
 
 // ═══════════════════════════════════════════
 // GRID — auto-resolution from window size
@@ -889,6 +894,7 @@ function renderFrame(ts) {
     }
     const bgPx = ctxBg.getImageData(0, 0, cols, rows).data;
     const comp  = new Uint8ClampedArray(bgPx);
+    lastComp = comp;
     if (params.ascii) renderAscii(comp);
     else renderPassthrough(comp);
     return;
@@ -897,8 +903,95 @@ function renderFrame(ts) {
   // Mode 1: compositor (vídeo + capes)
   if (bgVid.readyState < 2 || !bgVid.videoWidth) return;
   const comp = buildComposite(ts);
+  lastComp = comp;
   if (params.ascii) renderAscii(comp);
   else renderPassthrough(comp);
+}
+
+function drawAsciiVectorPage(pdf, comp, opts) {
+  const bg = opts.bg;                 // '#000' | '#fff'
+  const fg = opts.fg || null;         // null => per-char color
+  const invert = !!opts.invert;       // invert brightness for white background page
+  const colorize = !!opts.colorize;   // true => per-char color (applyBrightSat)
+
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+
+  // Background fill
+  pdf.setFillColor(bg === '#fff' ? 255 : 0);
+  pdf.rect(0, 0, pageW, pageH, 'F');
+
+  // Font + size: keep it close to canvas pixel grid.
+  pdf.setFont('courier', 'bold');
+  pdf.setFontSize(charH);
+
+  // jsPDF baseline isn't always 'top' across versions; offset Y a bit to align.
+  const yBaseline = charH * 0.92;
+
+  for (let row = 0; row < rows; row++) {
+    const y = row * charH + yBaseline;
+    for (let col = 0; col < cols; col++) {
+      const i = (row * cols + col) * 4;
+      const r = comp[i], g = comp[i + 1], b = comp[i + 2];
+
+      const bright = rgbToBright(r, g, b);
+      const mappedBright = invert ? (255 - bright) : bright;
+      const ch = brightToChar(mappedBright);
+      if (ch === ' ') continue;
+
+      if (colorize) {
+        const [sr, sg, sb] = applyBrightSat(r, g, b);
+        pdf.setTextColor(sr | 0, sg | 0, sb | 0);
+      } else if (fg) {
+        if (fg === '#fff') pdf.setTextColor(255, 255, 255);
+        else pdf.setTextColor(0, 0, 0);
+      }
+
+      const x = col * charW;
+      pdf.text(ch + ch, x, y);
+    }
+  }
+}
+
+async function downloadPdfFrame() {
+  try {
+    if (!lastComp || !cols || !rows) {
+      showMsg('// encara no hi ha cap frame per exportar');
+      return;
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      showMsg('// falta la llibreria PDF (jspdf)');
+      return;
+    }
+
+    // Force landscape pages and keep a consistent page size.
+    const w = cAscii.width;
+    const h = cAscii.height;
+    const pageW = Math.max(w, h);
+    const pageH = Math.min(w, h);
+
+    const pdf = new window.jspdf.jsPDF({
+      unit: 'px',
+      orientation: 'landscape',
+      format: [pageW, pageH],
+      compress: true,
+    });
+
+    // Page 1: black bg + colored glyphs (vector, selectable).
+    drawAsciiVectorPage(pdf, lastComp, { bg: '#000', colorize: true });
+
+    // Page 2: black bg + white glyphs.
+    pdf.addPage([pageW, pageH], 'landscape');
+    drawAsciiVectorPage(pdf, lastComp, { bg: '#000', fg: '#fff', colorize: false });
+
+    // Page 3: white bg + black glyphs, with inverted brightness mapping.
+    pdf.addPage([pageW, pageH], 'landscape');
+    drawAsciiVectorPage(pdf, lastComp, { bg: '#fff', fg: '#000', invert: true, colorize: false });
+
+    pdf.save('ascii-frame.pdf');
+  } catch (e) {
+    showMsg('// error PDF: ' + (e && e.message ? e.message : e));
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -941,7 +1034,6 @@ function nextBgVideo(manual = false) {
   bgIdx = (bgIdx + 1) % bgVideoList.length;
   const it = bgVideoList[bgIdx];
   bgVid.src = it.url; bgVid.load(); bgVid.play().catch(() => {});
-  label.textContent = it.name + ' · pexels';
   scheduleNextBg();
 }
 // No canviem per 'ended'; el timer ho gestiona
@@ -1005,7 +1097,6 @@ function nextBgImage() {
   img.crossOrigin = 'anonymous';
   img.src = it.url;
   img.onload = () => { bgImage = img; };
-  label.textContent = it.name + ' · unsplash';
   if (bgImgAutoTimer) clearTimeout(bgImgAutoTimer);
   bgImgAutoTimer = setTimeout(nextBgImage, rnd(10000, 20000));
 }
@@ -1015,7 +1106,6 @@ let mVidList = [], mVidIdx = 0;
 let mImgList = [], mImgIdx = 0;
 let mVid = null;   // <video> actiu en mode 2
 let mImg = null;   // <img> activa en mode 2
-const labelM = document.getElementById('label-right');
 
 async function fetchMediaVideo(query) {
   if (!query) query = pick(TAGS);
@@ -1045,7 +1135,6 @@ function nextMediaVideo() {
   // Reutilitzem bgVid però en mode 2 no hi ha capes
   bgVid.src = it.url; bgVid.load(); bgVid.play().catch(() => {});
   mVid = bgVid;
-  labelM.textContent = it.name + ' · pexels';
 }
 
 async function fetchMediaPhoto(query) {
@@ -1073,7 +1162,6 @@ function nextMediaPhoto() {
   img.crossOrigin = 'anonymous';
   img.src = it.url;
   img.onload = () => { mImg = img; };
-  labelM.textContent = it.name + ' · unsplash';
 }
 
 // ═══════════════════════════════════════════
@@ -1183,6 +1271,11 @@ document.getElementById('m-img-query').addEventListener('keydown', e => {
   if (e.key === 'Enter') fetchMediaPhoto(e.target.value.trim());
 });
 document.getElementById('btn-m-img-next').addEventListener('click', nextMediaPhoto);
+
+// PDF export
+if (btnPdf) {
+  btnPdf.addEventListener('click', downloadPdfFrame);
+}
 
 // ═══════════════════════════════════════════
 // CHROME — autohide + handle (salvapantalles)
