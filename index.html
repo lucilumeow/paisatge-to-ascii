@@ -688,6 +688,13 @@ function detectBlendMode(ctx, w, h) {
 // ═══════════════════════════════════════════
 function rnd(a,b) { return a + Math.random()*(b-a); }
 function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function assetKey(a) { return (a && a.type ? a.type : '?') + '|' + (a && a.url ? a.url : ''); }
+function pickUniqueAsset(excludeKeys) {
+  if (!overlayAssets.length) return null;
+  const pool = overlayAssets.filter(a => !excludeKeys.has(assetKey(a)));
+  const src = pool.length ? pool : overlayAssets;
+  return pick(src);
+}
 
 // ═══════════════════════════════════════════
 // LAYER FACTORY
@@ -740,9 +747,20 @@ function buildLayers() {
   layers.forEach(destroyLayer);
   layers = [];
   if (!overlayAssets.length) return;
+  // Evita duplicats visibles alhora (mateix url) mentre n'hi hagi prou assets.
+  const used = new Set();
   const shuffled = [...overlayAssets].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < params.layerCount; i++)
-    layers.push(makeLayer(shuffled[i % shuffled.length]));
+  for (const a of shuffled) {
+    if (layers.length >= params.layerCount) break;
+    const k = assetKey(a);
+    if (used.has(k)) continue;
+    used.add(k);
+    layers.push(makeLayer(a));
+  }
+  // Si no hi ha prou assets únics, omple la resta (ja no es pot evitar repetir).
+  while (layers.length < params.layerCount) {
+    layers.push(makeLayer(pick(overlayAssets)));
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -758,7 +776,10 @@ function buildComposite(ts) {
     const L = layers[i];
     if (ts - L.startedAt > L.duration && overlayAssets.length > 0) {
       destroyLayer(L);
-      layers[i] = makeLayer(pick(overlayAssets));
+      // Reemplaça intentant no repetir cap asset ja present en altres capes.
+      const exclude = new Set(layers.map((x, j) => (j === i || !x) ? '' : assetKey(x.asset)).filter(Boolean));
+      const next = pickUniqueAsset(exclude) || pick(overlayAssets);
+      layers[i] = makeLayer(next);
     }
   }
 
